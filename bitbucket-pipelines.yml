@@ -1,0 +1,53 @@
+image: node:18
+
+definitions:
+  caches:
+    node: node_modules
+
+pipelines:
+  default:
+    - step:
+        name: Install & Test
+        caches:
+          - node
+        script:
+          - npm ci
+          - npm run lint
+          - npm run build
+
+  branches:
+    main:
+      - step:
+          name: Install & Test
+          caches:
+            - node
+          script:
+            - npm ci
+            - npm run lint
+            - npm run build
+      - step:
+          name: Deploy to Vercel (Production)
+          deployment: production
+          script:
+            - npm install -g vercel
+            - vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+            - vercel build --prod --token=$VERCEL_TOKEN
+            - vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+
+  pull-requests:
+    '**':
+      - step:
+          name: Install & Test
+          caches:
+            - node
+          script:
+            - npm ci
+            - npm run lint
+            - npm run build
+      - step:
+          name: Deploy Preview to Vercel
+          script:
+            - npm install -g vercel
+            - vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+            - vercel build --token=$VERCEL_TOKEN
+            - vercel deploy --prebuilt --token=$VERCEL_TOKEN
